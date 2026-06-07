@@ -790,6 +790,12 @@ body.exam-submitted select[disabled] {
     <label for="student-email">אימייל (אופציונלי - לקבלת הציון)</label>
     <input id="student-email" type="email" placeholder="your.name@example.com" autocomplete="off" style="direction:ltr;text-align:right;">
 
+    <div id="start-code-group" style="display:none;">
+      <label for="start-code">קוד פתיחה (מהמורה)</label>
+      <input id="start-code" type="text" placeholder="הקלד את הקוד שמופיע על הלוח" autocomplete="off" style="direction:ltr;text-align:right;letter-spacing:2px;font-weight:600;">
+      <div id="start-code-feedback" style="font-size:13px;margin-top:4px;color:var(--text-mute);"></div>
+    </div>
+
     <div class="warning">
       <strong>שים לב:</strong> בלחיצה על "התחל בחינה" יופעל הטיימר ל-2 שעות.
       הטיימר ימשיך לרוץ ברציפות, גם אם הדפדפן או הטאב ייסגרו. התשובות נשמרות אוטומטית.
@@ -856,7 +862,7 @@ body.exam-submitted select[disabled] {
     <h2>חלק א׳ — יסודות המחשוב <span class="pts">25 נק׳</span></h2>
     <div class="desc">מבנה המחשב, רכיבי חומרה, זיכרון, אחסון, מערכות קבצים וגיבוי.</div>
     <div class="rules"><strong>הוראות לחלק זה:</strong> יש לענות על כל 8 שאלות החובה (1-8). שאלה 9 היא רשות (בונוס).</div>
-  </section>
+  </section><div id="part-a-questions" class="questions-container" data-part="computing">
     <article class="question" id="q-1" data-qid="1" data-type="matching" data-optional="0">
       <div class="q-head">
         <div class="q-meta">
@@ -1250,12 +1256,12 @@ RAID 1 (Mirroring): המידע נכתב בו-זמנית על שני דיסקים
 
 6. אי-תלות במחשב מסוים: בדיסק חיצוני, אם המחשב כבוי — אין גישה. NAS פועל באופן עצמאי 24/7.</div>
       </div>
-    </article>
+    </article></div>
     <section class="part-header part-b">
     <h2>חלק ב׳ — יסודות התקשוב <span class="pts">75 נק׳</span></h2>
     <div class="desc">מבנה רשתות, מודל OSI ו-TCP/IP, ציוד רשת, כתובות, WiFi, אבטחה, Firewall, שירותי רשת, פקודות בדיקה, NAT ו-QoS.</div>
     <div class="rules"><strong>הוראות לחלק זה:</strong> יש לענות על כל 22 שאלות החובה (10-31). שאלות 32-35 הן רשות.</div>
-  </section>
+  </section><div id="part-b-questions" class="questions-container" data-part="networking">
     <article class="question" id="q-10" data-qid="10" data-type="ordering" data-optional="0">
       <div class="q-head">
         <div class="q-meta">
@@ -2488,7 +2494,7 @@ Outbound = תעבורה יוצאת — בקשות מהמחשב כלפי חוץ (
 
 עיקרון מקצועי: לא להתחיל מהבעיה ה&quot;זוהרת&quot; (מצלמות מבחוץ) — להתחיל מהבסיס. אם המחשב של המנהל לא מקבל IP, ייתכן שיש בעיה רחבה יותר ברשת שמשפיעה גם על המצלמות.</div>
       </div>
-    </article>
+    </article></div>
 
     <div class="exam-footer">
       <strong>סוף הבחינה • בהצלחה!</strong>
@@ -2530,6 +2536,9 @@ function loadState() {
       // וודא תאימות עם state ישן
       s.hints = s.hints || { used: 0, revealed: {} };
       s.grading = s.grading || null;
+      s.shuffleOrder = s.shuffleOrder || null;
+      s.tabLeaves = s.tabLeaves || [];
+      s.startCodeValid = s.startCodeValid || false;
       return s;
     }
   } catch (e) {}
@@ -2541,6 +2550,9 @@ function loadState() {
     answers: {},
     flagged: {},
     hints: { used: 0, revealed: {} },
+    shuffleOrder: null,
+    tabLeaves: [],
+    startCodeValid: false,
     isSubmitted: false,
     answersRevealed: false,
     grading: null,
@@ -2565,7 +2577,32 @@ const entryGate = document.getElementById('entry-gate');
 const nameInput = document.getElementById('student-name');
 const idInput = document.getElementById('student-id');
 const emailInput = document.getElementById('student-email');
+const startCodeGroup = document.getElementById('start-code-group');
+const startCodeInput = document.getElementById('start-code');
+const startCodeFeedback = document.getElementById('start-code-feedback');
 const startBtn = document.getElementById('start-btn');
+
+// ============= בדיקה אם דרוש קוד פתיחה =============
+let startCodeRequired = false;
+let startCodeChecking = false;
+
+async function checkStartCodeRequirement() {
+  if (!SUBMIT_URL) return; // מצב מקומי - לא דורש קוד
+  try {
+    const res = await fetch(SUBMIT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'check_start_code_required' }),
+    });
+    const data = await res.json();
+    if (data.required) {
+      startCodeRequired = true;
+      startCodeGroup.style.display = 'block';
+    }
+  } catch (e) {
+    // אם השרת לא מגיב - לא נכריח (לא ננעל את התלמיד)
+    console.warn('check_start_code_required failed:', e);
+  }
+}
 
 function validateEntry() {
   const name = nameInput.value.trim();
@@ -2573,26 +2610,67 @@ function validateEntry() {
   const email = emailInput.value.trim();
   const validName = name.length >= 2;
   const validId = /^\d{9}$/.test(id);
-  // אימייל אופציונלי — אם ריק זה תקין, אם מלא חייב להיות תקני
   const validEmail = email === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validStartCode = !startCodeRequired || state.startCodeValid;
   nameInput.classList.toggle('invalid', name && !validName);
   idInput.classList.toggle('invalid', id && !validId);
   emailInput.classList.toggle('invalid', email && !validEmail);
-  startBtn.disabled = !(validName && validId && validEmail);
+  startBtn.disabled = !(validName && validId && validEmail && validStartCode);
 }
 nameInput.addEventListener('input', validateEntry);
 idInput.addEventListener('input', validateEntry);
 emailInput.addEventListener('input', validateEntry);
+
+// ============= ולידציה של קוד פתיחה (עם debounce) =============
+let startCodeTimer = null;
+startCodeInput && startCodeInput.addEventListener('input', function() {
+  state.startCodeValid = false;
+  const code = startCodeInput.value.trim();
+  startCodeFeedback.textContent = '';
+  startCodeFeedback.style.color = '';
+  if (code.length === 0) { validateEntry(); return; }
+  if (startCodeTimer) clearTimeout(startCodeTimer);
+  startCodeTimer = setTimeout(async function() {
+    startCodeChecking = true;
+    startCodeFeedback.textContent = 'בודק...';
+    startCodeFeedback.style.color = 'var(--text-mute)';
+    try {
+      const res = await fetch(SUBMIT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ type: 'validate_start_code', code: code }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        state.startCodeValid = true;
+        startCodeFeedback.textContent = '✓ הקוד תקין';
+        startCodeFeedback.style.color = 'var(--green)';
+      } else {
+        startCodeFeedback.textContent = '✗ הקוד לא נכון';
+        startCodeFeedback.style.color = 'var(--red)';
+      }
+    } catch (e) {
+      startCodeFeedback.textContent = 'שגיאת רשת';
+      startCodeFeedback.style.color = 'var(--red)';
+    }
+    startCodeChecking = false;
+    validateEntry();
+  }, 500);
+});
 
 startBtn.addEventListener('click', () => {
   state.studentName = nameInput.value.trim();
   state.studentId = idInput.value.trim();
   state.studentEmail = emailInput.value.trim();
   state.startedAt = Date.now();
+  // ייצור סדר אקראי לחלקים השונים, פעם אחת בלבד
+  state.shuffleOrder = generateShuffleOrder();
   saveState();
   hideEntryGate();
   initApp();
 });
+
+// בדוק אם דרוש קוד פתיחה כשעולה הדף
+checkStartCodeRequirement();
 
 function hideEntryGate() {
   entryGate.classList.add('hidden');
@@ -2614,17 +2692,89 @@ if (state.startedAt) {
 function initApp() {
   document.getElementById('hdr-name').textContent = state.studentName || '—';
   document.getElementById('hdr-id').textContent = state.studentId || '—';
+  applyShuffleOrder();   // לפני initAnswers - כדי שהאלמנטים יהיו במקום הנכון
   initAnswers();
   initFlags();
   initBindings();
   initHints();
   buildSidebar();
   startTimer();
+  initTabLeaveTracking();
   if (state.answersRevealed) revealAllAnswers();
   // אם המבחן כבר הוגש (גם אחרי טעינה מחדש של הדף) - נעל את הממשק
   if (state.isSubmitted) {
     lockExamUI();
   }
+}
+
+// ============= סדר שאלות אקראי =============
+
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function generateShuffleOrder() {
+  // מערבב בנפרד: חלק א׳ חובה, חלק ב׳ חובה, חלק ב׳ רשות
+  const partA_ids = EXAM.partA.questions.filter(function(q) { return !q.isOptional; }).map(function(q) { return q.num; });
+  const partB_mand = EXAM.partB.questions.filter(function(q) { return !q.isOptional; }).map(function(q) { return q.num; });
+  const partB_opt = EXAM.partB.questions.filter(function(q) { return q.isOptional; }).map(function(q) { return q.num; });
+  return {
+    partA: shuffleArray(partA_ids),
+    partB_mand: shuffleArray(partB_mand),
+    partB_opt: shuffleArray(partB_opt),
+  };
+}
+
+function applyShuffleOrder() {
+  if (!state.shuffleOrder) return;
+  const partAContainer = document.getElementById('part-a-questions');
+  const partBContainer = document.getElementById('part-b-questions');
+  if (!partAContainer || !partBContainer) return;
+
+  // appendChild על אלמנט קיים = מזיז אותו לסוף ההורה
+  state.shuffleOrder.partA.forEach(function(qid) {
+    const q = document.getElementById('q-' + qid);
+    if (q) partAContainer.appendChild(q);
+  });
+  state.shuffleOrder.partB_mand.forEach(function(qid) {
+    const q = document.getElementById('q-' + qid);
+    if (q) partBContainer.appendChild(q);
+  });
+  state.shuffleOrder.partB_opt.forEach(function(qid) {
+    const q = document.getElementById('q-' + qid);
+    if (q) partBContainer.appendChild(q);
+  });
+}
+
+// ============= ניטור עזיבת טאב =============
+
+var tabLeftAt = null;
+
+function initTabLeaveTracking() {
+  if (state.isSubmitted) return; // לא צריך לתעד אחרי הגשה
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      tabLeftAt = Date.now();
+    } else if (tabLeftAt !== null) {
+      const dur = Math.round((Date.now() - tabLeftAt) / 1000);
+      state.tabLeaves.push({ at: tabLeftAt, durationSec: dur });
+      tabLeftAt = null;
+      saveState();
+    }
+  });
+  // אירוע נוסף - אם החלון בכלל נסגר/נטען מחדש כשהטאב מוסתר
+  window.addEventListener('beforeunload', function() {
+    if (document.hidden && tabLeftAt !== null) {
+      const dur = Math.round((Date.now() - tabLeftAt) / 1000);
+      state.tabLeaves.push({ at: tabLeftAt, durationSec: dur });
+      saveState();
+    }
+  });
 }
 
 // ============= נעילת הממשק אחרי הגשה =============
@@ -3118,6 +3268,9 @@ window.confirmSubmit = async function() {
 };
 
 async function submitToBackend(grading) {
+  const totalTabLeaves = state.tabLeaves.length;
+  const totalTabSeconds = state.tabLeaves.reduce(function(s, t) { return s + (t.durationSec || 0); }, 0);
+
   const payload = {
     type: 'exam_submission',
     studentName: state.studentName,
@@ -3130,6 +3283,11 @@ async function submitToBackend(grading) {
     hintsUsed: state.hints.used,
     hintsRevealed: state.hints.revealed,
     flagged: state.flagged,
+    tabLeaves: {
+      count: totalTabLeaves,
+      totalSeconds: totalTabSeconds,
+      events: state.tabLeaves,
+    },
     closedGrading: grading,
     examMeta: { title: EXAM.meta.title, semester: EXAM.meta.semester, course: EXAM.meta.course },
   };
@@ -3280,3 +3438,7 @@ document.addEventListener('keydown', e => {
 
 </body>
 </html>
+
+
+
+
