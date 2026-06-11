@@ -2722,12 +2722,13 @@ function shuffleArray(arr) {
 }
 
 function generateShuffleOrder() {
-  // מערבב בנפרד: חלק א׳ חובה, חלק ב׳ חובה, חלק ב׳ רשות
-  const partA_ids = EXAM.partA.questions.filter(function(q) { return !q.isOptional; }).map(function(q) { return q.num; });
+  // חלק א׳: מערבבים את כל השאלות ביחד (כולל בונוס) - כדי שגם הבונוס יזוז בין תלמידים
+  const partA_all = EXAM.partA.questions.map(function(q) { return q.num; });
+  // חלק ב׳: שאלות חובה לחוד, רשות לחוד - כדי שהרשות יישארו בסוף אבל גם הן בסדר אקראי
   const partB_mand = EXAM.partB.questions.filter(function(q) { return !q.isOptional; }).map(function(q) { return q.num; });
   const partB_opt = EXAM.partB.questions.filter(function(q) { return q.isOptional; }).map(function(q) { return q.num; });
   return {
-    partA: shuffleArray(partA_ids),
+    partA: shuffleArray(partA_all),
     partB_mand: shuffleArray(partB_mand),
     partB_opt: shuffleArray(partB_opt),
   };
