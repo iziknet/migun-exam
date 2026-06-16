@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מתכונת בגרות — מערכות תקשוב 791381</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== CONFIG NOTE: ערוך את בלוק CONFIG בתחתית ה-JS — קוד פתיחה וכתובת השרת ===== */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --ink:#1b2733; --ink-soft:#5a6b7b;
+  --line:#d7dee6; --navy:#16324f; --navy-soft:#1f4straight;
+  --accent:#1f7a8c; --accent-strong:#145e6e; --accent-wash:#e4f1f3;
+  --ok:#2e8b57; --ok-wash:#e3f3ea; --flag:#e08a2b; --flag-wash:#fbf0df;
+  --danger:#c0392b; --danger-wash:#fbe7e4; --counted:#16324f;
+  --radius:12px; --shadow:0 1px 3px rgba(20,40,60,.08),0 6px 24px rgba(20,40,60,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:'Heebo','Segoe UI',Arial,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.cli{direction:ltr; text-align:left; font-family:'Fira Code','Consolas',monospace;
+  background:#0f2233; color:#cfe6ec; padding:14px 16px; border-radius:8px;
+  font-size:.92rem; white-space:pre-wrap; line-height:1.7; margin:10px 0; overflow-x:auto;}
+button{font-family:inherit; cursor:pointer}
+.hidden{display:none !important}
+
+/* ---------- centered card screens (login / instructions) ---------- */
+.center-wrap{min-height:100%; display:flex; align-items:center; justify-content:center; padding:28px}
+.card{background:var(--surface); width:100%; max-width:560px; border-radius:var(--radius);
+  box-shadow:var(--shadow); border:1px solid var(--line); overflow:hidden}
+.card-head{background:var(--navy); color:#fff; padding:24px 28px}
+.card-head .kicker{font-size:.78rem; letter-spacing:.12em; text-transform:uppercase;
+  color:#9fc3cc; font-weight:600; margin:0 0 6px}
+.card-head h1{margin:0; font-size:1.45rem; font-weight:800}
+.card-head .meta{margin-top:8px; font-size:.9rem; color:#cdd9e2}
+.card-body{padding:26px 28px}
+.field{margin-bottom:18px}
+.field label{display:block; font-weight:600; font-size:.92rem; margin-bottom:7px}
+.field input{width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:9px;
+  font-family:inherit; font-size:1rem; background:#fbfcfd; transition:border-color .15s,box-shadow .15s}
+.field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-wash)}
+.field .hint{font-size:.8rem; color:var(--ink-soft); margin-top:6px}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  background:var(--accent); color:#fff; border:none; padding:13px 22px; border-radius:10px;
+  font-weight:700; font-size:1rem; width:100%; transition:background .15s, transform .05s}
+.btn:hover{background:var(--accent-strong)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{background:#9fb3bb; cursor:not-allowed}
+.err{background:var(--danger-wash); color:var(--danger); border:1px solid #f0c5be;
+  padding:10px 14px; border-radius:9px; font-size:.9rem; margin-bottom:16px}
+
+/* ---------- instructions ---------- */
+.instructions .card{max-width:720px}
+.inst-block{font-size:.95rem}
+.inst-block h3{color:var(--accent-strong); font-size:1rem; margin:18px 0 8px}
+.inst-block ul{margin:0; padding-inline-start:22px}
+.inst-block li{margin-bottom:6px}
+.struct{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0}
+.struct .box{border:1px solid var(--line); border-radius:10px; padding:14px; background:#fbfcfd}
+.struct .box .n{font-size:1.6rem; font-weight:800; color:var(--accent)}
+.struct .box .t{font-size:.85rem; color:var(--ink-soft)}
+.ack{display:flex; gap:10px; align-items:flex-start; background:var(--flag-wash);
+  border:1px solid #eccf9f; border-radius:10px; padding:14px; margin:18px 0}
+.ack input{margin-top:4px; width:18px; height:18px; accent-color:var(--accent)}
+
+/* ---------- exam layout ---------- */
+#screen-exam{display:flex; flex-direction:column; height:100%}
+.topbar{background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between;
+  padding:12px 20px; gap:16px; flex-wrap:wrap}
+.topbar .title{font-weight:700; font-size:1rem}
+.topbar .title small{display:block; font-weight:400; color:#a9c3cc; font-size:.78rem}
+.timer{display:flex; align-items:center; gap:10px; background:#0f2233; padding:8px 16px;
+  border-radius:10px; font-family:'Fira Code',monospace; font-size:1.25rem; font-weight:500;
+  letter-spacing:.04em; border:1px solid #234; transition:background .3s,color .3s}
+.timer.warn{background:var(--flag); color:#1b2733; border-color:var(--flag)}
+.timer.crit{background:var(--danger); color:#fff; border-color:var(--danger); animation:pulse 1.1s infinite}
+@keyframes pulse{50%{opacity:.7}}
+.timer .lbl{font-family:'Heebo',sans-serif; font-size:.72rem; opacity:.8; font-weight:600}
+
+.exam-body{flex:1; display:flex; min-height:0}
+.sidebar{width:280px; background:var(--surface); border-inline-start:1px solid var(--line);
+  padding:18px; overflow-y:auto; flex-shrink:0}
+.sidebar h4{margin:0 0 10px; font-size:.82rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft)}
+.grid{display:grid; grid-template-columns:repeat(6,1fr); gap:7px; margin-bottom:8px}
+.tile{aspect-ratio:1; border:1.5px solid var(--line); border-radius:7px; background:#fbfcfd;
+  font-size:.82rem; font-weight:700; color:var(--ink-soft); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; position:relative; transition:all .12s}
+.tile:hover{border-color:var(--accent)}
+.tile.answered{background:var(--ok-wash); border-color:var(--ok); color:var(--ok)}
+.tile.flagged{background:var(--flag-wash); border-color:var(--flag); color:var(--flag)}
+.tile.current{outline:3px solid var(--accent); outline-offset:1px; color:var(--accent)}
+.tile.counted::after{content:""; position:absolute; top:3px; inset-inline-end:3px; width:6px; height:6px;
+  border-radius:50%; background:var(--counted)}
+.tile.notcounted{opacity:.55}
+.legend{font-size:.78rem; color:var(--ink-soft); margin-top:12px; display:grid; gap:5px}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend .dot{width:11px; height:11px; border-radius:3px; border:1.5px solid}
+.legend .d-ans{background:var(--ok-wash); border-color:var(--ok)}
+.legend .d-flag{background:var(--flag-wash); border-color:var(--flag)}
+.legend .d-cnt{background:var(--counted); border-color:var(--counted); border-radius:50%}
+.partb-counter{margin-top:14px; padding:12px; border-radius:9px; background:var(--accent-wash);
+  border:1px solid #b9dde2; font-size:.85rem}
+.partb-counter b{color:var(--accent-strong)}
+
+.main{flex:1; overflow-y:auto; padding:28px 36px; min-width:0}
+.q-card{max-width:760px; margin:0 auto}
+.q-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; gap:12px}
+.q-tag{display:inline-flex; gap:8px; align-items:center; font-size:.8rem; color:var(--ink-soft)}
+.q-tag .part{background:var(--navy); color:#fff; padding:3px 10px; border-radius:20px; font-weight:700}
+.q-tag .pts{background:var(--accent-wash); color:var(--accent-strong); padding:3px 10px; border-radius:20px; font-weight:700}
+.flag-btn{display:inline-flex; gap:7px; align-items:center; background:none; border:1.5px solid var(--line);
+  color:var(--ink-soft); padding:7px 13px; border-radius:9px; font-weight:600; font-size:.85rem}
+.flag-btn.on{background:var(--flag-wash); border-color:var(--flag); color:var(--flag)}
+.q-num{font-size:.9rem; color:var(--accent-strong); font-weight:700; margin-bottom:4px}
+.q-stem{font-size:1.12rem; font-weight:500; margin:0 0 18px; white-space:pre-wrap}
+.options{display:grid; gap:11px}
+.opt{display:flex; gap:12px; align-items:flex-start; border:1.5px solid var(--line); border-radius:10px;
+  padding:13px 15px; cursor:pointer; background:#fbfcfd; transition:all .12s}
+.opt:hover{border-color:var(--accent); background:var(--accent-wash)}
+.opt.sel{border-color:var(--accent); background:var(--accent-wash); box-shadow:0 0 0 2px var(--accent-wash)}
+.opt input{margin-top:4px; width:18px; height:18px; accent-color:var(--accent); flex-shrink:0}
+.opt .txt{flex:1}
+textarea.open{width:100%; min-height:150px; padding:14px; border:1.5px solid var(--line); border-radius:10px;
+  font-family:inherit; font-size:1rem; line-height:1.6; resize:vertical; background:#fbfcfd}
+textarea.open:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-wash)}
+.blanks{display:grid; gap:10px; margin-top:6px}
+.blank-row{display:flex; align-items:center; gap:10px}
+.blank-row .bl-num{width:34px; height:34px; flex-shrink:0; border-radius:8px; background:var(--navy);
+  color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem}
+.blank-row input{flex:1; padding:11px 13px; border:1.5px solid var(--line); border-radius:9px;
+  font-family:'Fira Code',monospace; direction:ltr; text-align:left; font-size:.95rem; background:#fbfcfd}
+.blank-row input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-wash)}
+.q-nav{display:flex; justify-content:space-between; gap:12px; max-width:760px; margin:28px auto 0}
+.nav-btn{background:var(--surface); border:1.5px solid var(--line); color:var(--ink); padding:12px 22px;
+  border-radius:10px; font-weight:700; font-size:.95rem; min-width:120px}
+.nav-btn:hover{border-color:var(--accent); color:var(--accent-strong)}
+.nav-btn:disabled{opacity:.4; cursor:not-allowed}
+.nav-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.nav-btn.primary:hover{background:var(--accent-strong)}
+.submit-row{max-width:760px; margin:24px auto 40px; text-align:center}
+.submit-btn{background:var(--ok); color:#fff; border:none; padding:15px 40px; border-radius:11px;
+  font-weight:800; font-size:1.05rem}
+.submit-btn:hover{filter:brightness(.95)}
+
+/* ---------- overlays ---------- */
+.overlay{position:fixed; inset:0; background:rgba(15,34,51,.55); display:flex; align-items:center;
+  justify-content:center; padding:24px; z-index:50}
+.overlay .card{max-width:520px}
+.ov-icon{width:64px; height:64px; border-radius:50%; background:var(--ok-wash); color:var(--ok);
+  display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 16px}
+.ov-warn .ov-icon{background:var(--flag-wash); color:var(--flag)}
+.modal-actions{display:flex; gap:12px; margin-top:22px}
+.modal-actions .btn{flex:1}
+.btn.ghost{background:none; color:var(--ink); border:1.5px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent); color:var(--accent-strong); background:none}
+
+@media (max-width:820px){
+  .exam-body{flex-direction:column}
+  .sidebar{width:auto; border-inline-start:none; border-top:1px solid var(--line); order:2}
+  .grid{grid-template-columns:repeat(8,1fr)}
+  .main{padding:20px 16px}
+  .struct{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<section id="screen-login" class="center-wrap">
+  <div class="card">
+    <div class="card-head">
+      <p class="kicker">מתכונת בגרות · תשפ״ו</p>
+      <h1>מערכות תקשוב — שאלון 791381</h1>
+      <div class="meta">מגמת תקשוב · התמחות תשתיות תקשורת · משך הבחינה 3:30 שעות</div>
+    </div>
+    <div class="card-body">
+      <div id="login-err" class="err hidden"></div>
+      <div class="field">
+        <label for="in-name">שם מלא</label>
+        <input id="in-name" type="text" autocomplete="off" placeholder="שם פרטי ושם משפחה">
+      </div>
+      <div class="field">
+        <label for="in-id">מספר תעודת זהות</label>
+        <input id="in-id" type="text" inputmode="numeric" autocomplete="off" placeholder="9 ספרות">
+        <div class="hint">ת.ז. משמש לזיהוי המחברת בלבד — הבחינה נבדקת בעילום שם.</div>
+      </div>
+      <div class="field">
+        <label for="in-code">קוד פתיחה</label>
+        <input id="in-code" type="text" autocomplete="off" placeholder="הקוד שנמסר על-ידי המורה">
+        <div class="hint">קוד הפתיחה נקבע על-ידי המורה לכל מועד בחינה.</div>
+      </div>
+      <button id="btn-login" class="btn">המשך להוראות</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== INSTRUCTIONS ===================== -->
+<section id="screen-instructions" class="center-wrap instructions hidden">
+  <div class="card">
+    <div class="card-head">
+      <p class="kicker">לפני שמתחילים</p>
+      <h1>הוראות והנחיות לבחינה</h1>
+    </div>
+    <div class="card-body">
+      <div class="struct">
+        <div class="box"><div class="n">60</div><div class="t">חלק א — בסיס · 24 שאלות × 3 נק׳ · 20 נכונות = 60 מלא</div></div>
+        <div class="box"><div class="n">40</div><div class="t">חלק ב — תשתיות · 8 סעיפים מתוך 12 × 5 נק׳</div></div>
+      </div>
+      <div class="inst-block">
+        <h3>איך עונים</h3>
+        <ul>
+          <li><b>חלק א:</b> ענו על כמה שאלות שתרצו. 20 תשובות נכונות מתוך 24 מזכות במלוא 60 הנקודות.</li>
+          <li><b>חלק ב:</b> ענו על <b>8 סעיפים בלבד</b> מתוך 12. שימו לב — <b>ייבדקו 8 הסעיפים הראשונים שתענו עליהם</b> (לפי סדר הסעיפים א׳–י״ב).</li>
+          <li>קראו היטב כל שאלה לפני שתבחרו על מה לענות. נצלו את מלוא הזמן.</li>
+          <li>אין סאבנטינג — מסכות הרשת הן לפי Class בלבד (/24, /16, /8).</li>
+        </ul>
+        <h3>במהלך הבחינה</h3>
+        <ul>
+          <li>תשובותיכם נשמרות אוטומטית. אפשר לדלג קדימה ואחורה בין השאלות.</li>
+          <li>אפשר לסמן שאלה בדגל ולחזור אליה בהמשך.</li>
+          <li>בסיום הזמן הבחינה תיסגר ותוגש אוטומטית.</li>
+        </ul>
+      </div>
+      <label class="ack">
+        <input id="ack" type="checkbox">
+        <span>קראתי והבנתי את ההוראות. אני מתחיל את הבחינה — והטיימר יתחיל לרוץ.</span>
+      </label>
+      <button id="btn-start" class="btn" disabled>התחל מבחן</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EXAM ===================== -->
+<section id="screen-exam" class="hidden">
+  <div class="topbar">
+    <div class="title">מערכות תקשוב 791381 <small id="who"></small></div>
+    <div class="timer" id="timer"><span class="lbl">זמן נותר</span><span id="time-val">3:30:00</span></div>
+  </div>
+  <div class="exam-body">
+    <div class="main">
+      <div id="q-host" class="q-card"></div>
+      <div class="q-nav">
+        <button class="nav-btn" id="btn-prev">→ הקודמת</button>
+        <button class="nav-btn primary" id="btn-next">הבאה ←</button>
+      </div>
+      <div class="submit-row">
+        <button class="submit-btn" id="btn-submit">סיום והגשת הבחינה</button>
+      </div>
+    </div>
+    <aside class="sidebar">
+      <h4>חלק א — בסיס (60 נק׳)</h4>
+      <div class="grid" id="grid-a"></div>
+      <h4 style="margin-top:18px">חלק ב — תשתיות (40 נק׳)</h4>
+      <div class="grid" id="grid-b"></div>
+      <div class="partb-counter" id="pb-counter"></div>
+      <div class="legend">
+        <span><i class="dot d-ans"></i> נענתה</span>
+        <span><i class="dot d-flag"></i> מסומנת בדגל</span>
+        <span><i class="dot d-cnt"></i> נבדקת (חלק ב — 8 הראשונים)</span>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ===================== SUBMIT CONFIRM ===================== -->
+<div id="overlay-confirm" class="overlay hidden">
+  <div class="card">
+    <div class="card-body" style="text-align:center">
+      <div class="ov-icon">?</div>
+      <h2 style="margin:0 0 8px">להגיש את הבחינה?</h2>
+      <p id="confirm-text" style="color:var(--ink-soft); margin:0"></p>
+      <div class="modal-actions">
+        <button class="btn ghost" id="btn-cancel-submit">חזרה לבחינה</button>
+        <button class="btn" id="btn-confirm-submit">כן, הגש</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay-done" class="overlay hidden">
+  <div class="card">
+    <div class="card-body" style="text-align:center">
+      <div class="ov-icon">✓</div>
+      <h2 style="margin:0 0 8px">הבחינה הוגשה</h2>
+      <p id="done-text" style="color:var(--ink-soft); margin:0"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================================================================
+   נתוני המבחן — מוזרק מ-exam_791381.json (מקור האמת היחיד)
+   ================================================================= */
+const EXAM = {"exam_meta": {"title": "מתכונת בגרות תשפ\"ו — מערכות תקשוב 791381", "subject": "מערכות תקשוב — מגמת תקשוב", "specialization": "תשתיות תקשורת", "grade": "יא", "year": "תשפ\"ו", "questionnaire": "791381", "duration_minutes": 210, "exam_id": "migun-yud-alef-791381-tashpu", "total_points": 100, "real_bagrut_date": "2026-06-22"}, "scoring_rules": {"part_a": {"mode": "best_n_of_total", "total_questions": 24, "points_per_question": 3, "cap": 60, "full_marks_at_correct": 20, "note": "ציון חלק א = min(נכונות × 3, 60). 20 נכונות מתוך 24 = 60 מלא."}, "part_b": {"mode": "choose_8_of_12", "total_items": 12, "answer_count": 8, "points_per_item": 5, "cap": 40, "selection_mode": "first_8_answered", "note": "נבדקים 8 הסעיפים הראשונים שנענו (לפי סדר הסעיפים). יש להזהיר את התלמיד מראש."}}, "kiosk": {"mode": "full"}, "anti_cheat": {"shuffle_questions": true, "shuffle_options": true}, "start_code": {"mode": "configurable", "hardcoded": false, "source": "server", "note": "קוד פתיחה נקבע/מוגרל בצד השרת בכל הפעלה. אין קוד קשיח כמו ORT101.", "default": null}, "constraints": {"ipv4_masks": ["/24", "/16", "/8"], "subnetting": false, "note": "מסכות לפי Class בלבד (255.255.255.0 / 255.255.0.0 / 255.0.0.0). אין סאבנטינג ואין תתי-רשתות. אסור לצפות מהתלמיד לחישובי VLSM."}, "parts": [{"id": "A", "title": "חלק ראשון — מערכות תקשוב בסיס", "points": 60, "instructions": "ענו על השאלות כרצונכם. 20 תשובות נכונות (מתוך 24) מזכות במלוא 60 הנקודות. כל שאלה — 3 נקודות.", "questions": [{"id": "a1", "type": "single_choice", "points": 3, "stem": "מהו הערך העשרוני של המספר הבינארי 11001010?", "options": ["198", "202", "206", "210"]}, {"id": "a2", "type": "single_choice", "points": 3, "stem": "מהו הייצוג הבינארי של המספר העשרוני 150?", "options": ["10010110", "10010100", "10011010", "11001010"]}, {"id": "a3", "type": "single_choice", "points": 3, "stem": "איזה היגד נכון לגבי רשת מסוג שרת-לקוח (Client-Server)?", "options": ["כל מחשב מתפקד גם כשרת וגם כלקוח", "אין צורך בשרת ייעודי", "קיים ניהול מרכזי של המשאבים והאבטחה", "מתאימה רק לרשתות של עד שני מחשבים"]}, {"id": "a4", "type": "single_choice", "points": 3, "stem": "מהו מאפיין של רשת שוויונית (Peer-to-Peer)?", "options": ["כל תחנה יכולה לשמש גם כשרת וגם כלקוח", "קיים שרת מרכזי המנהל את כל המשאבים", "האבטחה מנוהלת באופן מרכזי בלבד", "נדרש מנהל רשת ייעודי לכל תחנה"]}, {"id": "a5", "type": "single_choice", "points": 3, "stem": "היכן נשמר קובץ ה-running-config של הנתב?", "options": ["ב-NVRAM", "ב-Flash", "ב-RAM", "בכונן הקשיח"]}, {"id": "a6", "type": "single_choice", "points": 3, "stem": "באיזה זיכרון נשמר ה-startup-config כך שיישמר גם לאחר כיבוי הנתב?", "options": ["RAM", "NVRAM", "Flash", "Cache"]}, {"id": "a7", "type": "single_choice", "points": 3, "stem": "היכן מאוחסנת מערכת ההפעלה (IOS) של הנתב?", "options": ["RAM", "NVRAM", "Flash", "ROM"]}, {"id": "a8", "type": "single_choice", "points": 3, "stem": "איזו מהאפשרויות היא דוגמה למערכת הפעלה בקוד פתוח (Open Source)?", "options": ["Windows", "Linux", "macOS", "iOS"]}, {"id": "a9", "type": "single_choice", "points": 3, "stem": "מהו מאפיין של מערכת הפעלה קניינית (קוד סגור)?", "options": ["כל משתמש רשאי לערוך ולהפיץ את קוד המקור", "ההפצה היא תמיד ללא תשלום", "קוד המקור אינו זמין לציבור, והשינויים מבוצעים רק על-ידי היצרן", "אין לה יצרן אחראי"]}, {"id": "a10", "type": "single_choice", "points": 3, "stem": "איזה היגד נכון לגבי ממשק שורת הפקודה (CLI)?", "options": ["המשתמש מקליד פקודות טקסט כדי לבצע פעולות", "המשתמש מבצע פעולות באמצעות לחיצה על אייקונים גרפיים", "הוא מחייב שימוש בעכבר בלבד", "אינו נתמך בנתבי סיסקו"]}, {"id": "a11", "type": "single_choice", "points": 3, "stem": "מהו תפקיד פרוטוקול ARP?", "options": ["לתרגם שם מתחם (domain) לכתובת IP", "לתרגם כתובת IP לכתובת MAC ברשת המקומית", "לחלק כתובות IP דינמיות", "להצפין את התעבורה ברשת"]}, {"id": "a12", "type": "single_choice", "points": 3, "stem": "מהו הסדר הנכון של שלבי תהליך ה-DHCP?", "options": ["Offer → Discover → Acknowledge → Request", "Request → Offer → Discover → Acknowledge", "Discover → Offer → Request → Acknowledge", "Discover → Request → Offer → Acknowledge"]}, {"id": "a13", "type": "single_choice", "points": 3, "stem": "מהו תפקידו של שרת DNS?", "options": ["לתרגם שמות מתחם (כגון www.example.com) לכתובות IP", "לחלק כתובות IP דינמיות לתחנות", "לתרגם כתובת IP לכתובת MAC", "לסנן תעבורה זדונית"]}, {"id": "a14", "type": "single_choice", "points": 3, "stem": "באיזה פרוטוקול נעשה שימוש כאשר מריצים את הפקודה ping לבדיקת קישוריות?", "options": ["TCP", "ICMP", "DHCP", "ARP"]}, {"id": "a15", "type": "single_choice", "points": 3, "stem": "בחר בהיגד שאינו נכון לגבי פרוטוקול UDP:", "options": ["הוא מבטיח הגעת נתונים ומתקן שגיאות", "הוא מעביר נתונים במהירות", "הוא חסר-קישוריות (connectionless)", "הוא פועל בשכבת התעבורה (שכבה 4)"]}, {"id": "a16", "type": "single_choice", "points": 3, "stem": "כמה סיביות (bits) מכילה כתובת MAC?", "options": ["32", "48", "64", "128"]}, {"id": "a17", "type": "single_choice", "points": 3, "stem": "מהי כתובת ה-MAC המשמשת לשידור (Broadcast) לכל התחנות ברשת המקומית?", "options": ["00:00:00:00:00:00", "FF:FF:FF:FF:FF:FF", "FE:80:00:00:00:00", "01:00:5E:00:00:01"]}, {"id": "a18", "type": "single_choice", "points": 3, "stem": "איזו מהכתובות הבאות היא כתובת IP פרטית?", "options": ["8.8.8.8", "200.200.10.1", "192.168.10.5", "172.32.5.1"]}, {"id": "a19", "type": "single_choice", "points": 3, "stem": "נתונה הרשת 192.168.1.0/24. מהי כתובת השידור (Broadcast) של הרשת?", "options": ["192.168.1.0", "192.168.1.1", "192.168.1.254", "192.168.1.255"]}, {"id": "a20", "type": "single_choice", "points": 3, "stem": "מהי כתובת ה-Loopback המשמשת לבדיקת תקינות מחסנית ה-TCP/IP במחשב?", "options": ["127.0.0.1", "192.168.0.1", "10.0.0.1", "169.254.0.1"]}, {"id": "a21", "type": "single_choice", "points": 3, "stem": "באיזו שכבה במודל ה-OSI מחולקים הנתונים למקטעים (segments)?", "options": ["שכבת התעבורה (Transport — שכבה 4)", "שכבת הרשת (Network — שכבה 3)", "שכבת קישור הנתונים (Data-Link — שכבה 2)", "השכבה הפיזית (Physical — שכבה 1)"]}, {"id": "a22", "type": "single_choice", "points": 3, "stem": "מתג קיבל מסגרת נתונים שכתובת ה-MAC היעד שלה אינה מופיעה בטבלת ה-MAC שלו. מה יעשה המתג?", "options": ["ידחה את המסגרת", "יעביר את המסגרת לשער ברירת המחדל", "ישדר את המסגרת לכל הממשקים הפעילים, פרט לממשק שממנו הגיעה", "ישמור את המסגרת עד שתתעדכן הטבלה"]}, {"id": "a23", "type": "single_choice", "points": 3, "stem": "מהו תפקידו של ממשק מסוג Trunk במתג?", "options": ["להעביר תעבורה של כמה VLANs בין מתגים", "לחבר תחנת קצה בודדת ל-VLAN אחד", "לחסום גישה לא מורשית לפי כתובת MAC", "להגדיר כתובת IP למתג"]}, {"id": "a24", "type": "single_choice", "points": 3, "stem": "מהו תפקידו של שער ברירת המחדל (Default Gateway) עבור תחנה ברשת מקומית?", "options": ["לנתב תעבורה מהרשת המקומית אל רשתות אחרות", "לתרגם שמות מתחם לכתובות IP", "לחלק כתובות MAC לתחנות", "להצפין את התעבורה היוצאת"]}]}, {"id": "B", "title": "חלק שני — שאלה 25 (התמחות תשתיות תקשורת)", "question_number": 25, "points": 40, "instructions": "ענו על 8 סעיפים מתוך 12. כל סעיף — 5 נקודות. שימו לב: ייבדקו 8 הסעיפים הראשונים שתענו עליהם.", "items": [{"id": "b_a", "label": "א", "type": "open", "points": 5, "stem": "לפניך שלוש פעולות רשת. לכל אחת ציין את הפרוטוקול המתאים ונמק במשפט: 1) צפייה בשידור וידאו חי (live streaming); 2) שליחת דוא\"ל ושמירה על הגעת כל הנתונים; 3) בדיקת קישוריות באמצעות הפקודה ping."}, {"id": "b_b", "label": "ב", "type": "fill_blanks", "points": 5, "stem": "השלם: גלישה מאובטחת מתבצעת בפרוטוקול ____ דרך פורט ____ , וגלישה לא מאובטחת בפרוטוקול ____ דרך פורט ____ . מהו ההבדל המהותי בין השניים?", "blanks_count": 4}, {"id": "b_c", "label": "ג", "type": "open", "points": 5, "stem": "נתונה הכתובת 172.18.45.200 עם מסכת רשת 255.255.0.0 (/16). א) מהי כתובת הרשת (Net ID)? ב) האם הכתובת פרטית או ציבורית?"}, {"id": "b_d", "label": "ד", "type": "open", "points": 5, "stem": "לאותה רשת מסעיף ג' (172.18.45.200, מסכה 255.255.0.0): א) מהי כתובת השידור (Broadcast)? ב) מהן הכתובת הראשונה והכתובת האחרונה הניתנות להקצאה לתחנות (hosts)?"}, {"id": "b_e", "label": "ה", "type": "fill_blanks", "points": 5, "stem": "השלם את הפקודות להגדרת שרת DHCP בנתב: מאגר בשם LAN, רשת 192.168.10.0/24, שער 192.168.10.1, DNS 8.8.8.8, ומניעת חלוקת 192.168.10.1–192.168.10.10.\nRouter(config)# ip dhcp ____ 192.168.10.1 192.168.10.10\nRouter(config)# ip dhcp pool ____\nRouter(dhcp-config)# ____ 192.168.10.0 255.255.255.0\nRouter(dhcp-config)# ____ 192.168.10.1\nRouter(dhcp-config)# dns-server 8.8.8.8", "blanks_count": 4}, {"id": "b_f", "label": "ו", "type": "open", "points": 5, "stem": "מנהל הרשת הזין בנתב: R1(config)# interface GigabitEthernet0/1 ; R1(config-if)# ip address dhcp. א) מה תפקיד ההגדרה? ב) באיזה תרחיש משתמשים בה? תן דוגמה."}, {"id": "b_g", "label": "ז", "type": "open", "points": 5, "stem": "תאר את ארבעת שלבי תהליך ה-DHCP (DORA) לפי הסדר, וציין בקצרה מה קורה בכל שלב."}, {"id": "b_h", "label": "ח", "type": "open", "points": 5, "stem": "מחשב A (IP 192.168.1.10, MAC AA-AA-AA-AA-AA-AA) שולח חבילה למחשב B (IP 10.0.0.20) הנמצא ברשת אחרת. השער הוא 192.168.1.1, MAC RR-RR-RR-RR-RR-RR. מהן כתובות ה-IP וה-MAC של המקור והיעד במסגרת היוצאת ממחשב A אל הנתב?"}, {"id": "b_i", "label": "ט", "type": "fill_blanks", "points": 5, "stem": "השלם את ההגדרות לצירוף הרשת 192.168.50.0/24 לפרוטוקול OSPF (תהליך 10) באזור 0:\nR1(config)# router ____ 10\nR1(config-router)# network 192.168.50.0 ____ area 0", "blanks_count": 2}, {"id": "b_j", "label": "י", "type": "fill_blanks", "points": 5, "stem": "נתב מנתב בין VLANs דרך קישור Trunk יחיד (Router on a Stick). השלם את הגדרת תת-הממשק עבור VLAN 10 (שער 192.168.10.1/24):\nR1(config)# interface GigabitEthernet0/0.10\nR1(config-subif)# ____ dot1Q 10\nR1(config-subif)# ip address 192.168.10.1 ____", "blanks_count": 2}, {"id": "b_k", "label": "יא", "type": "open", "points": 5, "stem": "ממחשב המקור ליעד קיימים שני מסלולים: מסלול 1 — 2 קפיצות (hops), עלות כוללת (cost) 50; מסלול 2 — 4 קפיצות, עלות כוללת 20. איזה מסלול ייבחר על-ידי Distance-Vector (כגון RIP) ואיזה על-ידי Link-State (כגון OSPF)? נמק."}, {"id": "b_l", "label": "יב", "type": "fill_blanks", "points": 5, "stem": "א) השלם הגדרת ממשק fa0/1 כ-Trunk במתג:\nSwitch(config)# interface fa0/1\nSwitch(config-if)# switchport mode ____\nב) השלם ניתוב סטטי בנתב R1: תעבורה לרשת 192.168.200.0/24 תנותב דרך 10.0.0.2:\nR1(config)# ip route 192.168.200.0 ____ 10.0.0.2", "blanks_count": 2}]}]};
+
+/* =================================================================
+   ⚙️ CONFIG — ערוך כאן לפני פריסה
+   ================================================================= */
+const CONFIG = {
+  // קודי פתיחה תקפים (אחד או יותר). בחר/החלף כרצונך — אין קוד קשיח.
+  // אפשר קוד שונה לכל כיתה/מועד. אם ריק [] — לא נדרש קוד.
+  START_CODES: ["יא2026"],
+  // כתובת ה-Web App של Apps Script (מסתיים ב-/exec). מלא לאחר פריסת Code.gs.
+  BACKEND_URL: "https://script.google.com/macros/s/AKfycbxhVDAQP8L2uUAR205pjpct5mhvBlIwm-871ZIT9JqWVOPRYKBtlIuT1EBWneEa99tpyQ/exec",
+  DURATION_MINUTES: EXAM.exam_meta.duration_minutes || 210,
+  STORAGE_KEY: "migun_" + EXAM.exam_meta.exam_id
+};
+
+/* ---------- storage (guarded — לא קורס אם localStorage חסום) ---------- */
+const Store = (() => {
+  let mem = {};
+  let ok = true;
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); } catch(e){ ok=false; }
+  return {
+    get(){ try{ return ok ? JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)||"null") : mem._s||null; }catch(e){ return null; } },
+    set(v){ try{ if(ok) localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(v)); else mem._s=v; }catch(e){ mem._s=v; } },
+    clear(){ try{ if(ok) localStorage.removeItem(CONFIG.STORAGE_KEY); else mem={}; }catch(e){} }
+  };
+})();
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const PART_A = EXAM.parts.find(p=>p.id==="A").questions;
+const PART_B = EXAM.parts.find(p=>p.id==="B").items;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------- state ---------- */
+let state = null;
+function freshState(student){
+  return {
+    student,
+    startedAt: Date.now(),
+    submitted: false,
+    // ערבול חלק א (שאלות + אפשרויות). חלק ב נשאר בסדר קבוע (בגלל כלל "8 הראשונים").
+    orderA: shuffle(PART_A.map((_,i)=>i)),
+    optMap: Object.fromEntries(PART_A.map(q=>[q.id, EXAM.anti_cheat.shuffle_options ? shuffle(q.options.map((_,i)=>i)) : q.options.map((_,i)=>i)])),
+    answers:{}, flags:{},
+    cursor:0 // index into combined flow
+  };
+}
+// combined flow = part A (shuffled) then part B (fixed)
+function flow(){
+  const a = state.orderA.map(i=>({part:"A", q:PART_A[i]}));
+  const b = PART_B.map(it=>({part:"B", q:it}));
+  return a.concat(b);
+}
+
+/* ---------- answered checks ---------- */
+function isAnswered(part, q){
+  const v = state.answers[q.id];
+  if(part==="A") return v!==undefined && v!==null;
+  if(q.type==="open") return typeof v==="string" && v.trim()!=="";
+  if(q.type==="fill_blanks") return Array.isArray(v) && v.some(x=>(x||"").trim()!=="");
+  return false;
+}
+// 8 הראשונים שנענו בחלק ב, לפי סדר הסעיפים
+function countedB(){
+  const out=[]; for(const it of PART_B){ if(isAnswered("B",it)) out.push(it.id); if(out.length===8) break; } return out;
+}
+
+/* ===================== LOGIN ===================== */
+$("#btn-login").addEventListener("click", () => {
+  const name=$("#in-name").value.trim(), id=$("#in-id").value.trim(), code=$("#in-code").value.trim();
+  const err=$("#login-err");
+  if(!name){ return showErr("יש להזין שם מלא."); }
+  if(!/^\d{5,9}$/.test(id)){ return showErr("יש להזין מספר תעודת זהות תקין."); }
+  if(CONFIG.START_CODES.length && !CONFIG.START_CODES.includes(code)){ return showErr("קוד הפתיחה שגוי. פנה למורה."); }
+  err.classList.add("hidden");
+  // resume if existing session for same id
+  const saved = Store.get();
+  if(saved && saved.student && saved.student.id===id && !saved.submitted){
+    state = saved; goExam();
+  } else {
+    pendingStudent = {name,id}; show("#screen-instructions");
+  }
+});
+let pendingStudent=null;
+function showErr(m){ const e=$("#login-err"); e.textContent=m; e.classList.remove("hidden"); }
+
+/* ===================== INSTRUCTIONS ===================== */
+$("#ack").addEventListener("change", e => $("#btn-start").disabled = !e.target.checked);
+$("#btn-start").addEventListener("click", () => {
+  state = freshState(pendingStudent); save(); goExam();
+});
+
+/* ===================== EXAM RENDER ===================== */
+function goExam(){
+  show("#screen-exam");
+  $("#who").textContent = "· " + state.student.name;
+  buildGrids();
+  render();
+  startTimer();
+}
+function show(sel){ ["#screen-login","#screen-instructions","#screen-exam"].forEach(s=>$(s).classList.add("hidden")); $(sel).classList.remove("hidden"); }
+
+function buildGrids(){
+  const ga=$("#grid-a"); ga.innerHTML="";
+  state.orderA.forEach((origIdx,pos)=>{
+    const t=document.createElement("button"); t.className="tile"; t.textContent=pos+1;
+    t.dataset.flow=pos; t.addEventListener("click",()=>{state.cursor=pos; render();});
+    ga.appendChild(t);
+  });
+  const gb=$("#grid-b"); gb.innerHTML="";
+  PART_B.forEach((it,i)=>{
+    const t=document.createElement("button"); t.className="tile"; t.textContent=it.label;
+    t.dataset.flow=PART_A.length+i; t.addEventListener("click",()=>{state.cursor=PART_A.length+i; render();});
+    gb.appendChild(t);
+  });
+}
+
+function refreshGrids(){
+  const f=flow(); const counted=new Set(countedB());
+  document.querySelectorAll("#grid-a .tile, #grid-b .tile").forEach(t=>{
+    const pos=+t.dataset.flow; const item=f[pos];
+    t.className="tile";
+    if(isAnswered(item.part,item.q)) t.classList.add("answered");
+    if(state.flags[item.q.id]) t.classList.add("flagged");
+    if(pos===state.cursor) t.classList.add("current");
+    if(item.part==="B"){
+      if(isAnswered("B",item.q)) t.classList.add(counted.has(item.q.id)?"counted":"notcounted");
+    }
+  });
+  const n=counted.size;
+  $("#pb-counter").innerHTML = `חלק ב: נבדקים <b>${n} מתוך 8</b> הסעיפים. ` +
+    (n<8 ? `ענה על עוד <b>${8-n}</b>.` : `הגעת ל-8 — סעיפים נוספים לא ייבדקו.`);
+}
+
+function render(){
+  const f=flow(); const item=f[state.cursor]; const q=item.q; const host=$("#q-host");
+  const flagged = !!state.flags[q.id];
+  let body="";
+  if(item.part==="A"){
+    const opts = state.optMap[q.id].map(origI=>({origI, txt:q.options[origI]}));
+    body = `<div class="options">` + opts.map(o=>{
+      const sel = state.answers[q.id]===o.origI;
+      return `<label class="opt ${sel?'sel':''}">
+        <input type="radio" name="opt" ${sel?'checked':''} data-orig="${o.origI}">
+        <span class="txt">${escapeHtml(o.txt)}</span></label>`;
+    }).join("") + `</div>`;
+  } else if(q.type==="open"){
+    body = `<textarea class="open" id="open-in" placeholder="כתוב את תשובתך כאן...">${escapeHtml(state.answers[q.id]||"")}</textarea>`;
+  } else if(q.type==="fill_blanks"){
+    const vals = state.answers[q.id]||[];
+    const n = q.blanks_count || 0;
+    body = `<div class="blanks">` + Array.from({length:n}).map((_,i)=>`
+      <div class="blank-row"><div class="bl-num">${i+1}</div>
+      <input type="text" data-bi="${i}" value="${escapeHtml(vals[i]||"")}" placeholder="השלמה ${i+1}"></div>`).join("") + `</div>`;
+  }
+
+  const partLabel = item.part==="A" ? "חלק א" : "חלק ב · שאלה 25";
+  const numLabel = item.part==="A" ? `שאלה ${state.cursor+1} מתוך 24` : `סעיף ${q.label}׳ מתוך 12`;
+  // stem may contain CLI lines (commands). render CLI blocks distinctly:
+  const stemHtml = renderStem(q.stem);
+
+  host.innerHTML = `
+    <div class="q-top">
+      <div class="q-tag"><span class="part">${partLabel}</span><span class="pts">${q.points} נק׳</span></div>
+      <button class="flag-btn ${flagged?'on':''}" id="flag-btn">⚑ ${flagged?'מסומנת':'סמן לחזרה'}</button>
+    </div>
+    <div class="q-num">${numLabel}</div>
+    <div class="q-stem">${stemHtml}</div>
+    ${body}`;
+
+  // wire inputs
+  if(item.part==="A"){
+    host.querySelectorAll('input[name="opt"]').forEach(r=>r.addEventListener("change",e=>{
+      state.answers[q.id]=+e.target.dataset.orig; save(); render();
+    }));
+  } else if(q.type==="open"){
+    $("#open-in").addEventListener("input", e=>{ state.answers[q.id]=e.target.value; saveDebounced(); refreshGrids(); });
+  } else if(q.type==="fill_blanks"){
+    host.querySelectorAll('input[data-bi]').forEach(inp=>inp.addEventListener("input",e=>{
+      const arr = Array.isArray(state.answers[q.id])?state.answers[q.id].slice():new Array(q.blanks_count||0).fill("");
+      arr[+e.target.dataset.bi]=e.target.value; state.answers[q.id]=arr; saveDebounced(); refreshGrids();
+    }));
+  }
+  $("#flag-btn").addEventListener("click",()=>{ state.flags[q.id]=!state.flags[q.id]; save(); render(); });
+  $("#btn-prev").disabled = state.cursor===0;
+  $("#btn-next").disabled = state.cursor===f.length-1;
+  refreshGrids();
+}
+
+// CLI lines (start with Router/Switch/R1 prompt) → styled block; rest → plain
+function renderStem(stem){
+  const lines = stem.split("\n");
+  let html="", buf=[];
+  const isCli = l => /(\(config[^)]*\)|>|#)\s*$/.test(l) || /^(Router|Switch|R\d)[\w().-]*[#>]/.test(l) || /^(Router|Switch|R\d)\(config/.test(l);
+  const flush=()=>{ if(buf.length){ html+=`<div class="cli">${buf.map(escapeHtml).join("\n")}</div>`; buf=[]; } };
+  for(const l of lines){
+    if(isCli(l)) buf.push(l);
+    else { flush(); html += escapeHtml(l) + "<br>"; }
+  }
+  flush();
+  return html.replace(/<br>$/,"");
+}
+function escapeHtml(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+$("#btn-prev").addEventListener("click",()=>{ if(state.cursor>0){state.cursor--; render();} });
+$("#btn-next").addEventListener("click",()=>{ const f=flow(); if(state.cursor<f.length-1){state.cursor++; render();} });
+
+/* ===================== TIMER ===================== */
+let timerInt=null;
+function startTimer(){
+  clearInterval(timerInt); tick(); timerInt=setInterval(tick,1000);
+}
+function tick(){
+  const total=CONFIG.DURATION_MINUTES*60;
+  const elapsed=Math.floor((Date.now()-state.startedAt)/1000);
+  let rem=total-elapsed;
+  const el=$("#timer"), val=$("#time-val");
+  if(rem<=0){ val.textContent="0:00:00"; clearInterval(timerInt); autoSubmit(); return; }
+  const h=Math.floor(rem/3600), m=Math.floor((rem%3600)/60), s=rem%60;
+  val.textContent = `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  el.classList.toggle("crit", rem<=300);
+  el.classList.toggle("warn", rem>300 && rem<=1800);
+}
+
+/* ===================== SAVE ===================== */
+let saveT=null;
+function save(){ Store.set(state); }
+function saveDebounced(){ clearTimeout(saveT); saveT=setTimeout(save,400); }
+
+/* ===================== SUBMIT ===================== */
+$("#btn-submit").addEventListener("click",()=>{
+  const aAns=PART_A.filter(q=>isAnswered("A",q)).length;
+  const bCnt=countedB().length;
+  $("#confirm-text").innerHTML =
+    `ענית על <b>${aAns}</b> שאלות בחלק א ועל <b>${bCnt}</b> סעיפים שייבדקו בחלק ב.<br>לאחר ההגשה לא ניתן לשנות תשובות.`;
+  $("#overlay-confirm").classList.remove("hidden");
+});
+$("#btn-cancel-submit").addEventListener("click",()=>$("#overlay-confirm").classList.add("hidden"));
+$("#btn-confirm-submit").addEventListener("click",()=>doSubmit(false));
+function autoSubmit(){ doSubmit(true); }
+
+function buildPayload(auto){
+  return {
+    exam_id: EXAM.exam_meta.exam_id,
+    student: state.student,
+    started_at: new Date(state.startedAt).toISOString(),
+    submitted_at: new Date().toISOString(),
+    auto_submitted: auto,
+    counted_part_b: countedB(),
+    answers_a: PART_A.filter(q=>isAnswered("A",q)).map(q=>({id:q.id, selected_index:state.answers[q.id]})),
+    answers_b: PART_B.filter(it=>isAnswered("B",it)).map(it=>({id:it.id, label:it.label, type:it.type, value:state.answers[it.id]}))
+  };
+}
+async function doSubmit(auto){
+  $("#overlay-confirm").classList.add("hidden");
+  state.submitted=true; save(); clearInterval(timerInt);
+  const payload=buildPayload(auto);
+  let sent=false;
+  if(CONFIG.BACKEND_URL){
+    try{
+      await fetch(CONFIG.BACKEND_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+      sent=true;
+    }catch(e){ sent=false; }
+  }
+  $("#done-text").innerHTML = sent
+    ? "תשובותיך נשלחו בהצלחה. אפשר לקרוא למורה."
+    : "תשובותיך נשמרו מקומית. הורד עותק גיבוי וקרא למורה.";
+  if(!sent){
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=`tshuvot_${state.student.id}.json`;
+    const btn=document.createElement("button"); btn.className="btn"; btn.style.marginTop="16px";
+    btn.textContent="הורד עותק גיבוי"; btn.onclick=()=>a.click();
+    $("#done-text").after(btn);
+  }
+  Store.clear();
+  $("#overlay-done").classList.remove("hidden");
+}
+
+/* ---------- resume on reload ---------- */
+window.addEventListener("load",()=>{
+  const saved=Store.get();
+  if(saved && !saved.submitted && saved.startedAt){
+    state=saved;
+    // pre-fill name on login so a refresh inside exam resumes after re-auth-light:
+    goExam();
+  }
+});
+</script>
+</body>
+</html>
